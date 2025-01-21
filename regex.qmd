@@ -1,0 +1,178 @@
+---
+title: "Regular Expressions"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+---
+# Regular Expressions - match patterns in text! 
+# 1. every regular expression needs to be as correct as possible
+# 2. as short as possible
+# 3. as efficient as possible 
+
+# goes character by character looking for the pattern you told it to look for
+
+
+## Symbols - capture ideas
+
+- `.`: any character (wildcard)
+- `^`: start of a string 
+- `$`: end of a string 
+- `[]`: contains the following set - whatever is in the [] is what we are trying to match
+- `[^]`: does not contain the following set (negation)
+- `|`: or
+- `()`: capturing group 
+- `*`: 0 or more
+- `+`: 1 or more
+- `?`: 0 or 1 (non greedy quantifier)
+- `{n}`: Exactly n
+- `{n,}`: N or more
+- `{n,m}`: Between n and m 
+- `\`: escape (telling the regular expression that you are looking for that literal character as opposed to the regular expression version of that character )
+- `\d`: digit
+- `\D`: Not a digit 
+- `\w`: word character
+- `\W`: not a word character 
+- `\s`: whitespace 
+- `\S`: Not a whitespace 
+- `\b`: word boundary 
+
+### Lookarounds
+ - good for finding a pattern that follows or comes before something else 
+- `(?=)`: Positive lookahead
+- `(?!)`: Negative lookahead
+- `(?<=)`: Positive lookbehind
+- `(?<!)`: Negative lookbehind
+
+
+## Functions
+
+### re
+
+```{python}
+#| eval: false
+import re
+
+string = '''
+Lil Baby helped you get your lingo up (What?)
+21 gave you false street cred
+Thug made you feel like you a slime in your head (Ayy, what?)
+Quavo said you can be from Northside (What?)
+2 Chainz say you good, but he lied
+'''
+
+re.findall('\d+', string) # one or more digits - in this case we would get 21 or 2
+
+re.sub(r'\d+', 'X', string) # sub - substitute the following, find any digit and substitute with X
+
+re.split(r'\d+', string) 
+
+re.match(r'\d+', string) # if there is a match and where that match occurs 
+```
+
+#### On the use of r
+
+You will often see the letter `r` before the string in regular expressions. This is to denote a raw string. This is important because it tells Python to ignore any special characters in the string. For example, if you want to match a backslash, you would need to use `\\` in a regular string. However, in a raw string, you can use `\`. 
+
+### pandas
+
+```{python}
+import pandas as pd
+
+example_df = pd.DataFrame(
+    {'text': [string]}
+)
+
+example_df['text'].str.findall(r'\d+') # going to find every digit
+
+example_df['text'].str.replace(r'\d+', 'X') # going to replace instances of these digits with X
+
+example_df['text'].str.split(r'\d+') # 
+
+example_df['text'].str.match(r'\d+') # is there a match to these digits
+
+example_df['text'].str.extract(r'(\d+)') # i have this pattern in a whole body of things, get it for me 
+
+example_df['text'].str.extractall(r'(\d+)') # extract every instance of that thing appearing
+
+example_df['text'].str.contains(r'\d+') # does it contain a string, yes or no 
+
+example_df['text'].str.count(r'\d+') # counts strings
+```
+
+
+```{python}
+import pandas as pd
+
+import re
+```
+
+```{python}
+test_strings = [
+    "Cant change the weatherMight not be forever",
+    "[Chorus] Say you can't sleep, baby, I know that's that me espresso [verse 1]",
+    " This 9 to 5 ain't  workin', why the hell do I work so hard? ",
+    "Where there's a will, then there's a way And I'm damn sure you lost it Embedded lyrics here", 
+    "https://www.billboard.com/charts/hot-100/2025-01-11/"
+]
+
+# Problem 1: need whether and might to be two separate words - what is the pattern to that problem? can't follow a lowercase letter immediately with an uppercase letter (pattern problem) 
+# Problem 2: the bracketed words are not actually part of the chorus 
+# Problem 3: leading and trailing white space and beginning and end of the string AND two spaces in front of 'workin'
+# Problem 4: Embedded lyrics here should not be there - need to strip it out 
+```
+
+```{python}
+lyrics_df = pd.DataFrame(
+    {"lyrics": test_strings}
+)
+
+lyrics_df['lyrics']
+```
+
+## Examples
+
+### Removing Specific Words
+
+```{python}
+lyrics_df['lyrics'].str.replace(r'Embedded.*$','', regex =True)[3] # replace embedded with a space 
+# always put the r before the word 
+# find the word embedded and anything that comes after it at the end of the string, replace it with nothing 
+```
+
+### Removing Extra Space
+
+```{python}
+lyrics_df['lyrics'].str.replace(r'^\s|\s$','', regex =True)[2]
+# the two at the end indicates we are looking at that item in the list
+```
+
+### Removing Bracketed Text
+
+```{python}
+lyrics_df['lyrics'].str.replace(r'\[.*?\]','', regex =True)[1]
+# 
+```
+
+### Splitting Text
+
+```{python}
+lyrics_df['lyrics'].str.replace(r'([a-z])([A-Z])','\\1 \\2', regex = True)[0]
+# \\1 is saying for the first group
+# \\2 is referring to the capital letters 
+```
+
+### Extracting Text
+https://www.billboard.com/charts/hot-100/2025-01-11/
+```{python}
+re.search(r'(?<=charts/).*(?=/[0-9]{4})', lyrics_df['lyrics'][4]).group(0)
+```
+
+## More Work
+
+```{python}
+all_lyrics = pd.read_feather(
+    '/Users/sberry5/Documents/teaching/UDA/code/lyrics_scrape_python/complete_lyrics_2025.feather', 
+    dtype_backend='pyarrow'
+)
+```
