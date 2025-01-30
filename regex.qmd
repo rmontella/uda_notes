@@ -29,10 +29,10 @@ jupyter: python3
 - `{n,}`: N or more
 - `{n,m}`: Between n and m 
 - `\`: escape (telling the regular expression that you are looking for that literal character as opposed to the regular expression version of that character )
-- `\d`: digit
-- `\D`: Not a digit 
-- `\w`: word character
-- `\W`: not a word character 
+- `\d`: any digit
+- `\D`: Any character that's not a digit 
+- `\w`: any word character
+- `\W`: any non word character 
 - `\s`: whitespace 
 - `\S`: Not a whitespace 
 - `\b`: word boundary 
@@ -65,9 +65,9 @@ re.findall('\d+', string) # one or more digits - in this case we would get 21 or
 
 re.sub(r'\d+', 'X', string) # sub - substitute the following, find any digit and substitute with X
 
-re.split(r'\d+', string) 
+re.split(r'\d+', string) # splits the line/creates a new line at any digit 
 
-re.match(r'\d+', string) # if there is a match and where that match occurs 
+re.match(r'\d+', string) # if there is a match and where that match occurs - no output if there are no matches 
 ```
 
 #### On the use of r
@@ -135,15 +135,20 @@ lyrics_df['lyrics']
 ### Removing Specific Words
 
 ```{python}
-lyrics_df['lyrics'].str.replace(r'Embedded.*$','', regex =True)[3] # replace embedded with a space 
-# always put the r before the word 
-# find the word embedded and anything that comes after it at the end of the string, replace it with nothing 
+lyrics_df['lyrics'].str.replace(r'Embedded.*$','', regex =True)[3] 
+
+# always put the r before the word
+ 
+# 'Embedded.*$'matches the word 'embedded' and everything after it, all the way to the end of the string, and replaced it with nothing
 ```
 
 ### Removing Extra Space
 
 ```{python}
 lyrics_df['lyrics'].str.replace(r'^\s|\s$','', regex =True)[2]
+
+# '^\s|\s$' matches any whitespace character (\s) at the beginning (^) or (|) the end ($) of the string 
+
 # the two at the end indicates we are looking at that item in the list
 ```
 
@@ -151,21 +156,42 @@ lyrics_df['lyrics'].str.replace(r'^\s|\s$','', regex =True)[2]
 
 ```{python}
 lyrics_df['lyrics'].str.replace(r'\[.*?\]','', regex =True)[1]
-# 
+
+#  \[: The backslash \ is used to escape the square bracket [ because square brackets have special meaning in regular expressions. So \[ literally matches the character [ in the string.
+
+# '\[.*?\]' matches any substring that starts with a [ character, ends with a ] character and contains any characters in between 
+
+# ? means * (which matches zero or more of the preceding character) will match the shortest possible string that fits the pattern - without ?, * would match the longest string possible 
 ```
 
 ### Splitting Text
 
 ```{python}
 lyrics_df['lyrics'].str.replace(r'([a-z])([A-Z])','\\1 \\2', regex = True)[0]
-# \\1 is saying for the first group
-# \\2 is referring to the capital letters 
+
+# checking for a lowercase letter immediately followed by an uppercase letter - wanting to fix this
+
+# () indicates the letters form a "capture group" so they can be referenced later --> the pattern above matches a lowercase letter immediately followed by a uppercase letter and captures both letters separately as groups
+
+# replacement string: \\1 refers to the first capture group (the lowercase letters) from the regex match and \\2 refers to the second capture group (the uppercase letters)
+
+#'\\1 \\2' replaces the match with the lowercase letter, a space, and then an uppercase letter
 ```
 
 ### Extracting Text
 https://www.billboard.com/charts/hot-100/2025-01-11/
 ```{python}
 re.search(r'(?<=charts/).*(?=/[0-9]{4})', lyrics_df['lyrics'][4]).group(0)
+
+# re.search - function that searches for the first occurance of the pattern provided within the string 
+
+# '(?<=charts/)' - a positive lookbehind assertion - string must be preceded by the substring 'charts/' but 'charts/' itself is NOT included in the match, '(?<=...)' syntax means only match if the following pattern precedes the match 
+
+# .* matches everything after charts/ up until the next part of the pattern, greedy - will match as many characters as possible 
+
+# '(?=/[0-9]{4})' - a positive lookahead assertion - string must be followed by the pattern / followed by exactly 4 digits ([0-9]{4}), but those 4 digits are not inluded in the match, '(?=...)' means only match if the designated pattern follows the match 
+
+# all together: the regex finds a substring that occurs after 'charts/' and before '/' followed by a 4 digit year 
 ```
 
 ## More Work
